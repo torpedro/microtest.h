@@ -1,3 +1,14 @@
+//
+// microtest
+//
+// URL: https://github.com/torpedro/microtest
+// Author: Pedro Flemming (http://torpedro.com/)
+// License: MIT License (https://github.com/torpedro/microtest/blob/master/LICENSE)
+// Copyright (c) 2017 Pedro Flemming
+//
+// This is a small header-only C++ unit testing framework.
+// It allows to define small unit tests with set of assertions available.
+//
 #ifndef __MICROTEST_H__
 #define __MICROTEST_H__
 
