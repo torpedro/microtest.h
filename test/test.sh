@@ -32,4 +32,13 @@ expectFailure "Argument Test 1"
 bin/argument_tests 100 >> /dev/null 2> /dev/null
 expectSuccess "Argument Test 2"
 
+# Run memory leak checks
+echo ""
+echo "Checking for memory leaks..."
+valgrind --leak-check=full --error-exitcode=44 --log-fd=3\
+  bin/sample_tests 3>&1 >/dev/null 2>/dev/null
+if [ $? == 44 ]; then
+  RET=$(($RET + 1))
+fi
+
 exit $RET
