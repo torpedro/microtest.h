@@ -8,9 +8,11 @@ all: examples
 clean:
 	rm -f ./$(BIN)/*
 
+test: examples
+	bash ./test/test.sh
+
 examples: $(BIN)/sample_tests $(BIN)/argument_tests
-	@./$(BIN)/argument_tests 100
-	@./$(BIN)/sample_tests
+
 
 $(BIN)/sample_tests:  test/sample_tests.cpp test/sample_tests2.cpp
 	$(CXX) $(CFLAGS) test/sample_tests.cpp test/sample_tests2.cpp -o $(BIN)/sample_tests
