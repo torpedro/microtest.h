@@ -134,11 +134,27 @@ namespace mt {
       return num_failed;
     }
   };
+
+  // Class that will capture the arguments passed to the program.
+  class Runtime {
+   public:
+    static const std::vector<std::string>& args(int argc = -1, char** argv = NULL) {
+      static std::vector<std::string> args_;
+      if (argc >= 0) {
+        for (int i = 0; i < argc; ++i) {
+          args_.push_back(argv[i]);
+        }
+      }
+      return args_;
+    }
+  };
 }
 
 
 #define TEST_MAIN() \
-  int main() {\
+  int main(int argc, char *argv[]) {\
+    mt::Runtime::args(argc, argv);\
+    \
     size_t num_failed = mt::TestsManager::RunAllTests(stdout);\
     if (num_failed == 0) {\
       fprintf(stdout, "%s{ summary} All tests succeeded!%s\n", mt::green(), mt::def());\
