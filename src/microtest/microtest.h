@@ -29,6 +29,12 @@
   } \
   ASSERT(a == b);
 
+#define ASSERT_NEQ(a, b) \
+  if (a == b) { \
+    std::cout << "Actual values: " << a << " == " << b << std::endl; \
+  } \
+  ASSERT(a != b);
+
 
 ////////////////
 // Unit Tests //

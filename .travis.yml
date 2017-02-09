@@ -18,5 +18,4 @@ compiler:
   - clang
 
 script:
-  - make
   - make test
