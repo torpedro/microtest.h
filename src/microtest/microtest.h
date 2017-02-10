@@ -21,29 +21,37 @@
 // Assertions //
 ////////////////
 
-#define ASSERT(cond) ASSERT_TRUE(cond);
+#define ASSERT(cond)\
+  ASSERT_TRUE(cond);
 
-#define ASSERT_TRUE(cond) if (!(cond)) throw mt::AssertFailedException(#cond);
+#define ASSERT_TRUE(cond)\
+  if (!(cond)) throw mt::AssertFailedException(#cond, __FILE__, __LINE__);
 
-#define ASSERT_FALSE(cond) if (cond) throw mt::AssertFailedException(#cond);
+#define ASSERT_FALSE(cond)\
+  if (cond) throw mt::AssertFailedException(#cond, __FILE__, __LINE__);
 
-#define ASSERT_NULL(value) ASSERT_TRUE(value == NULL);
+#define ASSERT_NULL(value)\
+  ASSERT_TRUE(value == NULL);
 
-#define ASSERT_NOTNULL(value) ASSERT_TRUE(value != NULL);
+#define ASSERT_NOTNULL(value)\
+  ASSERT_TRUE(value != NULL);
 
-#define ASSERT_STREQ(a, b) \
-  if (std::string(a).compare(std::string(b)) != 0) throw mt::AssertFailedException(#a " == " #b)
+#define ASSERT_STREQ(a, b)\
+  if (std::string(a).compare(std::string(b)) != 0)\
+    throw mt::AssertFailedException(#a " == " #b, __FILE__, __LINE__);
 
-#define ASSERT_EQ(a, b) \
-  if (a != b) { \
-    std::cout << "Actual values: " << a << " != " << b << std::endl; \
-  } \
+#define ASSERT_EQ(a, b)\
+  if (a != b) {\
+    printf("%s{    info} %s", mt::yellow(), mt::def());\
+    std::cout << "Actual values: " << a << " != " << b << std::endl;\
+  }\
   ASSERT(a == b);
 
-#define ASSERT_NEQ(a, b) \
-  if (a == b) { \
-    std::cout << "Actual values: " << a << " == " << b << std::endl; \
-  } \
+#define ASSERT_NEQ(a, b)\
+  if (a == b) {\
+    printf("%s{    info} %s", mt::yellow(), mt::def());\
+    std::cout << "Actual values: " << a << " == " << b << std::endl;\
+  }\
   ASSERT(a != b);
 
 
@@ -53,8 +61,8 @@
 
 #define TEST(name) \
   void name();\
-  namespace mt {\
-    bool __##name = TestsManager::AddTest(name, #name);\
+  namespace {\
+    bool __##name = mt::TestsManager::AddTest(name, #name);\
   }\
   void name()
 
@@ -65,12 +73,16 @@
 
 namespace mt {
 
+  inline const char* red() {
+    return "\033[1;31m";
+  }
+
   inline const char* green() {
     return "\033[0;32m";
   }
 
-  inline const char* red() {
-    return "\033[1;31m";
+  inline const char* yellow() {
+    return "\033[0;33m";
   }
 
   inline const char* def() {
@@ -92,16 +104,28 @@ namespace mt {
   // Exception that is thrown when an assertion fails.
   class AssertFailedException : public std::exception {
    public:
-    AssertFailedException(std::string description) :
+    AssertFailedException(std::string description, std::string filepath, int line) :
       std::exception(),
-      description_(description) {};
+      description_(description),
+      filepath_(filepath),
+      line_(line) {};
 
     virtual const char* what() const throw() {
       return description_.c_str();
     }
 
+    inline const char* getFilepath() {
+      return filepath_.c_str();
+    }
+
+    inline int getLine() {
+      return line_;
+    }
+
    protected:
     std::string description_;
+    std::string filepath_;
+    int line_;
   };
 
   class TestsManager {
@@ -143,7 +167,10 @@ namespace mt {
 
         } catch (AssertFailedException& e) {
           printFailed(test.name, file);
-          fprintf(file, "\t%sAssertion failed: %s%s\n", red(), e.what(), def());
+          fprintf(file, "           %sAssertion failed: %s%s\n",
+                  red(), e.what(), def());
+          fprintf(file, "           %s%s:%d%s\n",
+                  red(), e.getFilepath(), e.getLine(), def());
           ++num_failed;
         }
       }
