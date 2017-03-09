@@ -1,7 +1,13 @@
 
-BIN = bin
+# Directories
+SRC     = src
+BIN     = bin
 
-CFLAGS = -Wall -Isrc/ -std=c++11 -lstdc++
+# Compile Flags.
+CFLAGS  = -Wall -Isrc/ -std=c++11 -lstdc++
+
+# Installation
+INSTALL = /usr/local
 
 all: test
 
@@ -10,6 +16,9 @@ clean:
 
 test: $(BIN)/sample_tests $(BIN)/argument_tests
 	bash test/test.sh
+
+install:
+	cp -r $(SRC)/* $(INSTALL)/include/
 
 $(BIN)/sample_tests:  examples/sample_tests.cpp examples/sample_tests2.cpp
 	@mkdir -p $(BIN)/
