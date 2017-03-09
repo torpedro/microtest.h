@@ -1,6 +1,6 @@
-# microtest (C++)
-[![GitHub release](https://img.shields.io/github/release/torpedro/microtest.svg?maxAge=2592000)](https://github.com/torpedro/microtest/releases)
-[![Build Status](https://api.travis-ci.org/torpedro/microtest.svg?branch=master)](https://travis-ci.org/torpedro/microtest)
+# microtest.h (C++)
+[![GitHub release](https://img.shields.io/github/release/torpedro/microtest.h.svg?maxAge=2592000)](https://github.com/torpedro/microtest.h/releases)
+[![Build Status](https://api.travis-ci.org/torpedro/microtest.h.svg?branch=master)](https://travis-ci.org/torpedro/microtest.h)
 
 This is a small **header-only** C++ unit testing framework. It allows to define small unit tests with set of assertions available. It is contained within a **single header file**, so you can simply copy that header file to your project and don't have to link libraries or include multiple header files, if all you need is a quick testing framework.
 
@@ -13,9 +13,9 @@ To create a test file you only need to include `microtest/microtest.h`. Then you
 
 TEST(ExampleSucceedingTest) {
   ASSERT(true);
-  
+
   ASSERT_TRUE(true);
-  
+
   ASSERT_FALSE(false);
 
   ASSERT_EQ(20, 20);

@@ -1,9 +1,9 @@
 //
-// microtest
+// microtest.h
 //
-// URL: https://github.com/torpedro/microtest
+// URL: https://github.com/torpedro/microtest.h
 // Author: Pedro Flemming (http://torpedro.com/)
-// License: MIT License (https://github.com/torpedro/microtest/blob/master/LICENSE)
+// License: MIT License (https://github.com/torpedro/microtest.h/blob/master/LICENSE)
 // Copyright (c) 2017 Pedro Flemming
 //
 // This is a small header-only C++ unit testing framework.
