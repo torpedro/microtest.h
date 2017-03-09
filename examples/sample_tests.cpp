@@ -32,4 +32,14 @@ TEST(FailingTest) {
   ASSERT_EQ(a, c);
 }
 
+TEST(AssertTest_STREQ) {
+  std::string a = "abcdefg";
+  ASSERT_STREQ(a, "abcdefg");
+}
+
+TEST(AssertTestFail_STREQ) {
+  std::string a = "abcdefg";
+  ASSERT_STREQ(a, "xyz");
+}
+
 TEST_MAIN();
