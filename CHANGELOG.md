@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Treat unexpected standard and non-standard exceptions as individual test failures,
+  report them, and continue running the remaining tests.
+
 - Add CMake targets, presets, installation and package discovery, and independent
   CTest regression coverage while retaining C++11 compatibility.
 - Move the public header to `include/microtest/microtest.h`.

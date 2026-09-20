@@ -6,8 +6,8 @@ TEST(FirstTranslationUnit) { ++executed; }
 
 int main() {
   int failures = 0;
-  check(mt::TestsManager::tests().size() == 4, "cross-translation-unit registration", failures);
-  check(mt::TestsManager::RunAllTests() == 2, "exact failure count", failures);
-  check(executed == 4, "all registered tests run after failures", failures);
+  check(mt::TestsManager::tests().size() == 7, "cross-translation-unit registration", failures);
+  check(mt::TestsManager::RunAllTests() == 4, "exact failure count including exceptions", failures);
+  check(executed == 7, "all registered tests run after failures and exceptions", failures);
   return failures == 0 ? 0 : 1;
 }

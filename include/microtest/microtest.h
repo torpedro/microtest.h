@@ -174,7 +174,7 @@ class TestsManager {
 
     for (const Test& test : tests()) {
       // Run the test.
-      // If an AssertFailedException is thrown, the test has failed.
+      // Any exception escaping the test counts as one failure.
       try {
         printRunning(test.name, file);
 
@@ -186,6 +186,14 @@ class TestsManager {
         printFailed(test.name, file);
         std::fprintf(file, "           %sAssertion failed: %s%s\n", red(), e.what(), def());
         std::fprintf(file, "           %s%s:%d%s\n", red(), e.getFilepath(), e.getLine(), def());
+        ++num_failed;
+      } catch (const std::exception& e) {
+        printFailed(test.name, file);
+        std::fprintf(file, "           %sUnexpected exception: %s%s\n", red(), e.what(), def());
+        ++num_failed;
+      } catch (...) {
+        printFailed(test.name, file);
+        std::fprintf(file, "           %sUnexpected non-standard exception%s\n", red(), def());
         ++num_failed;
       }
     }

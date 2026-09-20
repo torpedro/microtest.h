@@ -79,11 +79,13 @@ diagnostics. String assertions accept `std::string` and non-null C strings.
 
 A failed assertion throws `mt::AssertFailedException`, ends the current test,
 and reports its expression, source file, and line. The runner continues with the
-remaining tests. Exceptions of other types propagate; crashes are not recovered.
+remaining tests. Other `std::exception` instances fail the current test and report
+their `what()` message; non-standard exceptions fail it with a generic diagnostic.
+The runner continues after either kind of exception. Crashes are not recovered.
 Tests run sequentially, and registration order across source files is unspecified.
 
 `TEST_MAIN()` returns **0** when all tests pass (including an empty suite), and
-**1** when assertions fail. `mt::TestsManager::RunAllTests()` returns the actual
+**1** when assertions fail or tests throw. `mt::TestsManager::RunAllTests()` returns the actual
 failure count. `mt::Runtime::args()` exposes command-line arguments, including
 the executable name. Output currently includes ANSI colors; assertion value
 diagnostics use standard output even when a custom runner output file is supplied.
