@@ -74,8 +74,9 @@ target_link_libraries(my_tests PRIVATE microtest::microtest)
 Each argument is evaluated once. Assertions work as single statements, including
 in unbraced `if`/`else` branches. C++11 does not specify the evaluation order
 between two arguments; do not modify the same object in both operands.
-Equality operands must support the relevant comparison and stream insertion for
-diagnostics. String assertions accept `std::string` and non-null C strings.
+Equality operands must support the relevant comparison. Diagnostics print each
+operand using `operator<<` when available, or `<unprintable>` otherwise. String
+assertions accept `std::string` and non-null C strings.
 
 A failed assertion throws `mt::AssertFailedException`, ends the current test,
 and reports its expression, source file, and line. The runner continues with the
@@ -87,8 +88,10 @@ Tests run sequentially, and registration order across source files is unspecifie
 `TEST_MAIN()` returns **0** when all tests pass (including an empty suite), and
 **1** when assertions fail or tests throw. `mt::TestsManager::RunAllTests()` returns the actual
 failure count. `mt::Runtime::args()` exposes command-line arguments, including
-the executable name. Output currently includes ANSI colors; assertion value
-diagnostics use standard output even when a custom runner output file is supplied.
+the executable name. Output currently includes ANSI colors. All runner diagnostics,
+including assertion values, use the stream passed to `RunAllTests(file)` (stdout
+by default). Assertions store value diagnostics in the exception; code catching
+`mt::AssertFailedException` directly can inspect them with `getDetails()`.
 
 ## Development
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Support comparable assertion operands without stream insertion, using an
+  `<unprintable>` placeholder, and route value diagnostics to the runner's output
+  stream. Expose captured values through `AssertFailedException::getDetails()`.
+
 - Treat unexpected standard and non-standard exceptions as individual test failures,
   report them, and continue running the remaining tests.
 

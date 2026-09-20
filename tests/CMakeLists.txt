@@ -1,4 +1,4 @@
-foreach(name IN ITEMS assertions registration runner header)
+foreach(name IN ITEMS assertions registration runner header diagnostics)
   add_executable(microtest_${name} ${name}.cpp)
   target_link_libraries(microtest_${name} PRIVATE microtest::microtest)
   microtest_development_target(microtest_${name})
@@ -7,6 +7,10 @@ target_sources(microtest_registration PRIVATE registration_other.cpp)
 add_test(NAME assertions COMMAND microtest_assertions)
 add_test(NAME registration COMMAND microtest_registration)
 add_test(NAME header COMMAND microtest_header)
+add_test(NAME diagnostics COMMAND "${CMAKE_COMMAND}"
+  "-DPROGRAM=$<TARGET_FILE:microtest_diagnostics>"
+  "-DLOG_FILE=${CMAKE_CURRENT_BINARY_DIR}/diagnostics.log"
+  -P "${CMAKE_CURRENT_SOURCE_DIR}/check_diagnostics.cmake")
 add_test(NAME runner_success COMMAND "${CMAKE_COMMAND}"
   "-DPROGRAM=$<TARGET_FILE:microtest_runner>" -DEXPECTED_EXIT=0
   "-DEXPECTED_OUTPUT=All tests succeeded!" -P "${CMAKE_CURRENT_SOURCE_DIR}/check_runner.cmake")

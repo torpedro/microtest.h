@@ -15,7 +15,8 @@
 #include <cstddef>
 #include <cstdio>
 #include <exception>
-#include <iostream>
+#include <ostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -102,8 +103,13 @@ inline void printFailed(const char* message, std::FILE* file = stdout) {
 // Exception that is thrown when an assertion fails.
 class AssertFailedException : public std::exception {
  public:
-  AssertFailedException(std::string description, std::string filepath, int line)
-      : std::exception(), description_(description), filepath_(filepath), line_(line) {};
+  AssertFailedException(std::string description, std::string filepath, int line,
+                        std::string details = std::string())
+      : std::exception(),
+        description_(description),
+        filepath_(filepath),
+        line_(line),
+        details_(details) {};
 
   const char* what() const noexcept override { return description_.c_str(); }
 
@@ -111,10 +117,13 @@ class AssertFailedException : public std::exception {
 
   inline int getLine() const { return line_; }
 
+  inline const char* getDetails() const { return details_.c_str(); }
+
  protected:
   std::string description_;
   std::string filepath_;
   int line_;
+  std::string details_;
 };
 
 namespace detail {
@@ -126,21 +135,37 @@ auto isNull(const T& value) -> decltype(value == nullptr) {
   return value == nullptr;
 }
 
+template <typename T>
+auto printValue(std::ostream& stream, const T& value, int) -> decltype(stream << value, void()) {
+  stream << value;
+}
+
+template <typename T>
+void printValue(std::ostream& stream, const T&, long) {
+  stream << "<unprintable>";
+}
+
+template <typename A, typename B>
+std::string comparisonDetails(const A& a, const B& b, const char* relation) {
+  std::ostringstream stream;
+  stream << "Actual values: ";
+  printValue(stream, a, 0);
+  stream << relation;
+  printValue(stream, b, 0);
+  return stream.str();
+}
+
 template <typename A, typename B>
 void assertEqual(const A& a, const B& b, const char* description, const char* file, int line) {
   if (!(a == b)) {
-    std::cout << yellow() << "{    info} " << def() << "Actual values: " << a << " != " << b
-              << std::endl;
-    throw AssertFailedException(description, file, line);
+    throw AssertFailedException(description, file, line, comparisonDetails(a, b, " != "));
   }
 }
 
 template <typename A, typename B>
 void assertNotEqual(const A& a, const B& b, const char* description, const char* file, int line) {
   if (!(a != b)) {
-    std::cout << yellow() << "{    info} " << def() << "Actual values: " << a << " == " << b
-              << std::endl;
-    throw AssertFailedException(description, file, line);
+    throw AssertFailedException(description, file, line, comparisonDetails(a, b, " == "));
   }
 }
 }  // namespace detail
@@ -184,6 +209,9 @@ class TestsManager {
 
       } catch (const AssertFailedException& e) {
         printFailed(test.name, file);
+        if (e.getDetails()[0] != '\0') {
+          std::fprintf(file, "%s{    info} %s%s\n", yellow(), def(), e.getDetails());
+        }
         std::fprintf(file, "           %sAssertion failed: %s%s\n", red(), e.what(), def());
         std::fprintf(file, "           %s%s:%d%s\n", red(), e.getFilepath(), e.getLine(), def());
         ++num_failed;
