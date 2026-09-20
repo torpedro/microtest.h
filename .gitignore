@@ -29,3 +29,7 @@ bin/
 *.exe
 *.out
 *.app
+
+build/
+CMakeUserPresets.json
+compile_commands.json

@@ -1,0 +1,20 @@
+function(run)
+  execute_process(COMMAND ${ARGV} RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
+  if(NOT "${result}" STREQUAL "0")
+    message(FATAL_ERROR "Command failed: ${ARGV}\n${output}\n${error}")
+  endif()
+endfunction()
+set(prefix "@CMAKE_CURRENT_BINARY_DIR@/install-test")
+run("@CMAKE_COMMAND@" --install "@PROJECT_BINARY_DIR@" --prefix "${prefix}" --config "${CONFIG}")
+# Move the install tree to check that the exported package is relocatable.
+set(relocated "@CMAKE_CURRENT_BINARY_DIR@/install-relocated")
+file(REMOVE_RECURSE "${relocated}")
+file(RENAME "${prefix}" "${relocated}")
+run("@CMAKE_COMMAND@" -S "@CMAKE_CURRENT_SOURCE_DIR@/consumer"
+  -B "@CMAKE_CURRENT_BINARY_DIR@/consumer-build" -G "@CMAKE_GENERATOR@"
+  "-DCMAKE_CXX_COMPILER=@CMAKE_CXX_COMPILER@"
+  "-DCMAKE_BUILD_TYPE=@CMAKE_BUILD_TYPE@"
+  "-Dmicrotest_DIR=${relocated}/@CMAKE_INSTALL_LIBDIR@/cmake/microtest")
+run("@CMAKE_COMMAND@" --build "@CMAKE_CURRENT_BINARY_DIR@/consumer-build" --config "${CONFIG}")
+run("@CMAKE_CTEST_COMMAND@" --test-dir "@CMAKE_CURRENT_BINARY_DIR@/consumer-build"
+  -C "${CONFIG}" --output-on-failure)

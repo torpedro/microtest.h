@@ -1,0 +1,78 @@
+{
+  "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "dev",
+      "displayName": "C++11 development",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "11",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "sanitizers",
+      "inherits": "dev",
+      "cacheVariables": {
+        "MICROTEST_SANITIZERS": "ON"
+      }
+    },
+    {
+      "name": "modern",
+      "inherits": "dev",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "23"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev"
+    },
+    {
+      "name": "sanitizers",
+      "configurePreset": "sanitizers"
+    },
+    {
+      "name": "modern",
+      "configurePreset": "modern"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "sanitizers",
+      "configurePreset": "sanitizers",
+      "output": {
+        "outputOnFailure": true
+      },
+      "environment": {
+        "ASAN_OPTIONS": "exitcode=99",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1:exitcode=99",
+        "LSAN_OPTIONS": "exitcode=99"
+      }
+    },
+    {
+      "name": "modern",
+      "configurePreset": "modern",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

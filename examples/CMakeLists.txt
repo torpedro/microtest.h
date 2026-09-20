@@ -1,0 +1,6 @@
+add_executable(microtest_example basic.cpp)
+target_link_libraries(microtest_example PRIVATE microtest::microtest)
+microtest_development_target(microtest_example)
+if(MICROTEST_BUILD_TESTS)
+  add_test(NAME example COMMAND microtest_example)
+endif()

@@ -1,29 +1,18 @@
-
-# Directories
-SRC     = src
-BIN     = bin
-
-# Compile Flags.
-CFLAGS  = -Wall -Isrc/ -std=c++11 -lstdc++
-
-# Installation
-INSTALL = /usr/local
+.PHONY: all configure test clean install
+CMAKE ?= cmake
+PREFIX ?= /usr/local
 
 all: test
 
+configure:
+	$(CMAKE) --preset dev
+
+test: configure
+	$(CMAKE) --build --preset dev
+	ctest --preset dev
+
 clean:
-	rm -f ./$(BIN)/*
+	$(CMAKE) --build build/dev --target clean
 
-test: $(BIN)/sample_tests $(BIN)/argument_tests
-	bash test/test.sh
-
-install:
-	cp -r $(SRC)/* $(INSTALL)/include/
-
-$(BIN)/sample_tests:  examples/sample_tests.cpp examples/sample_tests2.cpp
-	@mkdir -p $(BIN)/
-	$(CXX) $(CFLAGS) examples/sample_tests.cpp examples/sample_tests2.cpp -o $(BIN)/sample_tests
-
-$(BIN)/argument_tests:  examples/argument_tests.cpp
-	@mkdir -p $(BIN)/
-	$(CXX) $(CFLAGS) examples/argument_tests.cpp -o $(BIN)/argument_tests
+install: configure
+	$(CMAKE) --install build/dev --prefix "$(PREFIX)"

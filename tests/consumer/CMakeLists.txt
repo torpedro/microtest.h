@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.23)
+project(microtest_consumer LANGUAGES CXX)
+find_package(microtest 0.1 CONFIG REQUIRED)
+add_executable(consumer main.cpp)
+target_link_libraries(consumer PRIVATE microtest::microtest)
+set_target_properties(consumer PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED YES CXX_EXTENSIONS NO)
+enable_testing()
+add_test(NAME consumer COMMAND consumer)
