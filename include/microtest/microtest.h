@@ -14,11 +14,18 @@
 
 #include <cstddef>
 #include <cstdio>
+#include <cstring>
 #include <exception>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#if defined(_WIN32)
+#include <io.h>
+#elif defined(__unix__) || defined(__APPLE__)
+#include <unistd.h>
+#endif
 
 ////////////////
 // Assertions //
@@ -68,11 +75,11 @@
 ////////////////
 
 #define TEST(name)                                                                 \
-  void name();                                                                     \
+  static void name();                                                              \
   namespace {                                                                      \
   const bool microtest_registered_##name = mt::TestsManager::AddTest(name, #name); \
   }                                                                                \
-  void name()
+  static void name()
 
 ///////////////
 // Framework //
@@ -80,24 +87,51 @@
 
 namespace mt {
 
-inline const char* red() { return "\033[1;31m"; }
+enum class ColorMode { Auto, Always, Never };
 
-inline const char* green() { return "\033[0;32m"; }
+namespace detail {
+inline ColorMode& colorMode() {
+  static ColorMode mode = ColorMode::Auto;
+  return mode;
+}
 
-inline const char* yellow() { return "\033[0;33m"; }
+inline bool useColor(std::FILE* file) {
+  if (colorMode() != ColorMode::Auto) return colorMode() == ColorMode::Always;
+#if defined(_WIN32)
+  return _isatty(_fileno(file)) != 0;
+#elif defined(__unix__) || defined(__APPLE__)
+  return isatty(fileno(file)) != 0;
+#else
+  (void)file;
+  return false;
+#endif
+}
+}  // namespace detail
 
-inline const char* def() { return "\033[0m"; }
+inline void setColorMode(ColorMode mode) { detail::colorMode() = mode; }
+inline ColorMode getColorMode() { return detail::colorMode(); }
+
+inline const char* red(std::FILE* file = stdout) {
+  return detail::useColor(file) ? "\033[1;31m" : "";
+}
+inline const char* green(std::FILE* file = stdout) {
+  return detail::useColor(file) ? "\033[0;32m" : "";
+}
+inline const char* yellow(std::FILE* file = stdout) {
+  return detail::useColor(file) ? "\033[0;33m" : "";
+}
+inline const char* def(std::FILE* file = stdout) { return detail::useColor(file) ? "\033[0m" : ""; }
 
 inline void printRunning(const char* message, std::FILE* file = stdout) {
-  std::fprintf(file, "%s{ running}%s %s\n", green(), def(), message);
+  std::fprintf(file, "%s{ running}%s %s\n", green(file), def(file), message);
 }
 
 inline void printOk(const char* message, std::FILE* file = stdout) {
-  std::fprintf(file, "%s{      ok}%s %s\n", green(), def(), message);
+  std::fprintf(file, "%s{      ok}%s %s\n", green(file), def(file), message);
 }
 
 inline void printFailed(const char* message, std::FILE* file = stdout) {
-  std::fprintf(file, "%s{  failed} %s%s\n", red(), message, def());
+  std::fprintf(file, "%s{  failed} %s%s\n", red(file), message, def(file));
 }
 
 // Exception that is thrown when an assertion fails.
@@ -186,15 +220,31 @@ class TestsManager {
   }
 
   // Adds a new test to the current set of tests.
-  // Returns true after registration.
+  // Reject duplicate names and record the error for the runner.
   inline static bool AddTest(void (*fn)(void), const char* name) {
+    for (const Test& test : tests()) {
+      if (std::strcmp(test.name, name) == 0) {
+        registrationErrors().push_back(name);
+        return false;
+      }
+    }
     tests().push_back({name, fn});
     return true;
   }
 
+  inline static std::size_t RegistrationErrorCount() { return registrationErrors().size(); }
+
   // Run all tests that are registered.
-  // Returns the number of tests that failed.
+  // Returns the number of failed tests, or registration errors if the suite is invalid.
+  // An invalid suite is rejected before any tests execute.
   inline static std::size_t RunAllTests(std::FILE* file = stdout) {
+    if (!registrationErrors().empty()) {
+      for (const std::string& name : registrationErrors()) {
+        std::fprintf(file, "%s{   error} Duplicate test name: %s%s\n", red(file), name.c_str(),
+                     def(file));
+      }
+      return registrationErrors().size();
+    }
     std::size_t num_failed = 0;
 
     for (const Test& test : tests()) {
@@ -210,23 +260,32 @@ class TestsManager {
       } catch (const AssertFailedException& e) {
         printFailed(test.name, file);
         if (e.getDetails()[0] != '\0') {
-          std::fprintf(file, "%s{    info} %s%s\n", yellow(), def(), e.getDetails());
+          std::fprintf(file, "%s{    info} %s%s\n", yellow(file), def(file), e.getDetails());
         }
-        std::fprintf(file, "           %sAssertion failed: %s%s\n", red(), e.what(), def());
-        std::fprintf(file, "           %s%s:%d%s\n", red(), e.getFilepath(), e.getLine(), def());
+        std::fprintf(file, "           %sAssertion failed: %s%s\n", red(file), e.what(), def(file));
+        std::fprintf(file, "           %s%s:%d%s\n", red(file), e.getFilepath(), e.getLine(),
+                     def(file));
         ++num_failed;
       } catch (const std::exception& e) {
         printFailed(test.name, file);
-        std::fprintf(file, "           %sUnexpected exception: %s%s\n", red(), e.what(), def());
+        std::fprintf(file, "           %sUnexpected exception: %s%s\n", red(file), e.what(),
+                     def(file));
         ++num_failed;
       } catch (...) {
         printFailed(test.name, file);
-        std::fprintf(file, "           %sUnexpected non-standard exception%s\n", red(), def());
+        std::fprintf(file, "           %sUnexpected non-standard exception%s\n", red(file),
+                     def(file));
         ++num_failed;
       }
     }
 
     return num_failed;
+  }
+
+ private:
+  static std::vector<std::string>& registrationErrors() {
+    static std::vector<std::string> errors;
+    return errors;
   }
 };
 
@@ -245,21 +304,28 @@ class Runtime {
 };
 }  // namespace mt
 
-#define TEST_MAIN()                                                                             \
-  int main(int argc, char* argv[]) {                                                            \
-    mt::Runtime::args(argc, argv);                                                              \
-                                                                                                \
-    std::size_t num_failed = mt::TestsManager::RunAllTests(stdout);                             \
-    if (num_failed == 0) {                                                                      \
-      std::fprintf(stdout, "%s{ summary} All tests succeeded!%s\n", mt::green(), mt::def());    \
-      return 0;                                                                                 \
-    } else {                                                                                    \
-      double percentage = 100.0 * static_cast<double>(num_failed) /                             \
-                          static_cast<double>(mt::TestsManager::tests().size());                \
-      std::fprintf(stderr, "%s{ summary} %zu tests failed (%.2f%%)%s\n", mt::red(), num_failed, \
-                   percentage, mt::def());                                                      \
-      return 1;                                                                                 \
-    }                                                                                           \
+#define TEST_MAIN()                                                                          \
+  int main(int argc, char* argv[]) {                                                         \
+    mt::Runtime::args(argc, argv);                                                           \
+                                                                                             \
+    std::size_t num_failed = mt::TestsManager::RunAllTests(stdout);                          \
+    if (mt::TestsManager::RegistrationErrorCount() != 0) {                                   \
+      std::fprintf(                                                                          \
+          stderr,                                                                            \
+          "%s{ summary} Registration failed: %zu duplicate test name(s); no tests ran.%s\n", \
+          mt::red(stderr), mt::TestsManager::RegistrationErrorCount(), mt::def(stderr));     \
+      return 1;                                                                              \
+    } else if (num_failed == 0) {                                                            \
+      std::fprintf(stdout, "%s{ summary} All tests succeeded!%s\n", mt::green(stdout),       \
+                   mt::def(stdout));                                                         \
+      return 0;                                                                              \
+    } else {                                                                                 \
+      double percentage = 100.0 * static_cast<double>(num_failed) /                          \
+                          static_cast<double>(mt::TestsManager::tests().size());             \
+      std::fprintf(stderr, "%s{ summary} %zu tests failed (%.2f%%)%s\n", mt::red(stderr),    \
+                   num_failed, percentage, mt::def(stderr));                                 \
+      return 1;                                                                              \
+    }                                                                                        \
   }
 
 #endif  // MICROTEST_MICROTEST_H

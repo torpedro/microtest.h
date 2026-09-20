@@ -7,6 +7,11 @@ if(NOT output STREQUAL "" OR NOT error STREQUAL "")
   message(FATAL_ERROR "Diagnostics escaped the selected stream: ${output}\n${error}")
 endif()
 file(READ "${LOG_FILE}" log)
+string(ASCII 27 escape)
+string(FIND "${log}" "${escape}[" color_position)
+if(NOT color_position EQUAL -1)
+  message(FATAL_ERROR "File diagnostics contain ANSI colors: ${log}")
+endif()
 foreach(expected IN ITEMS
     "OpaqueSuccess"
     "OpaqueEqualityFailure"

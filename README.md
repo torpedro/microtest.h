@@ -83,15 +83,43 @@ and reports its expression, source file, and line. The runner continues with the
 remaining tests. Other `std::exception` instances fail the current test and report
 their `what()` message; non-standard exceptions fail it with a generic diagnostic.
 The runner continues after either kind of exception. Crashes are not recovered.
-Tests run sequentially, and registration order across source files is unspecified.
+Tests run sequentially in registration order: declaration order within a source
+file, with order across source files unspecified. Tests must not depend on that
+cross-file order. `TEST` functions have internal linkage, so duplicate names in
+different source files are reported by the runner instead of failing at link time.
+
+Test names must be unique across the entire executable, including different
+namespaces. `AddTest()` returns false for a duplicate and records a registration
+error. An invalid suite reports the duplicate names and runs **no tests**.
+`TEST_MAIN()` prints a registration-error summary and exits with status 1;
+`RunAllTests()` returns the registration-error count in this case. Custom runners
+can distinguish this from test failures using `RegistrationErrorCount()`.
 
 `TEST_MAIN()` returns **0** when all tests pass (including an empty suite), and
 **1** when assertions fail or tests throw. `mt::TestsManager::RunAllTests()` returns the actual
 failure count. `mt::Runtime::args()` exposes command-line arguments, including
-the executable name. Output currently includes ANSI colors. All runner diagnostics,
+the executable name. All runner diagnostics,
 including assertion values, use the stream passed to `RunAllTests(file)` (stdout
 by default). Assertions store value diagnostics in the exception; code catching
 `mt::AssertFailedException` directly can inspect them with `getDetails()`.
+
+Colors default to `mt::ColorMode::Auto`: each output stream uses ANSI colors only
+when connected to a terminal. Redirected files and pipes, including captured CI
+logs, stay plain. On Windows, terminal detection uses the CRT's `_isatty`; the
+terminal must support ANSI escape sequences. On platforms without terminal
+detection, auto mode uses plain output.
+
+Custom runners can override the policy before running tests:
+
+```cpp
+mt::setColorMode(mt::ColorMode::Never);  // Always disables ANSI colors.
+// mt::setColorMode(mt::ColorMode::Always);  // Includes colors even in a pipe/file.
+// mt::setColorMode(mt::ColorMode::Auto);    // Restores terminal detection.
+return mt::TestsManager::RunAllTests() == 0 ? 0 : 1;
+```
+
+`getColorMode()` returns the current policy. Colors affect presentation only;
+test names, source locations, and summary wording are the same in every mode.
 
 ## Development
 
