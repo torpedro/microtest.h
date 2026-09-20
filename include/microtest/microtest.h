@@ -12,6 +12,7 @@
 #ifndef MICROTEST_MICROTEST_H
 #define MICROTEST_MICROTEST_H
 
+#include <cstddef>
 #include <cstdio>
 #include <exception>
 #include <iostream>
@@ -30,8 +31,16 @@
   } while (0)
 
 #define ASSERT_FALSE(cond) ASSERT_TRUE(!(cond))
-#define ASSERT_NULL(value) ASSERT_TRUE((value) == NULL)
-#define ASSERT_NOTNULL(value) ASSERT_TRUE((value) != NULL)
+#define ASSERT_NULL(value)                                                       \
+  do {                                                                           \
+    if (!mt::detail::isNull((value)))                                            \
+      throw mt::AssertFailedException(#value " == nullptr", __FILE__, __LINE__); \
+  } while (0)
+#define ASSERT_NOTNULL(value)                                                    \
+  do {                                                                           \
+    if (mt::detail::isNull((value)))                                             \
+      throw mt::AssertFailedException(#value " != nullptr", __FILE__, __LINE__); \
+  } while (0)
 
 #define ASSERT_EQ(a, b)                                                  \
   do {                                                                   \
@@ -109,6 +118,14 @@ class AssertFailedException : public std::exception {
 };
 
 namespace detail {
+// The overload accepts nullptr and legacy null pointer constants (NULL or 0).
+inline bool isNull(std::nullptr_t) { return true; }
+
+template <typename T>
+auto isNull(const T& value) -> decltype(value == nullptr) {
+  return value == nullptr;
+}
+
 template <typename A, typename B>
 void assertEqual(const A& a, const B& b, const char* description, const char* file, int line) {
   if (!(a == b)) {

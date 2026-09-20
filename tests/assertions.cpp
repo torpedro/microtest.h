@@ -11,9 +11,16 @@ int main() {
   expectAssertion([] { ASSERT_FALSE(false); }, false, failures);
   expectAssertion([] { ASSERT_FALSE(true); }, true, failures);
   expectAssertion([] { ASSERT_NULL(nullptr); }, false, failures);
+  expectAssertion([] { ASSERT_NULL(NULL); }, false, failures);
+  expectAssertion([] { ASSERT_NULL(0); }, false, failures);
+  int* nullPointer = nullptr;
+  expectAssertion([&] { ASSERT_NULL(nullPointer); }, false, failures);
   expectAssertion([&] { ASSERT_NULL(&value); }, true, failures);
   expectAssertion([&] { ASSERT_NOTNULL(&value); }, false, failures);
   expectAssertion([] { ASSERT_NOTNULL(nullptr); }, true, failures);
+  expectAssertion([] { ASSERT_NOTNULL(NULL); }, true, failures);
+  expectAssertion([] { ASSERT_NOTNULL(0); }, true, failures);
+  expectAssertion([&] { ASSERT_NOTNULL(nullPointer); }, true, failures);
   expectAssertion([] { ASSERT_EQ(1, 1); }, false, failures);
   expectAssertion([] { ASSERT_EQ(1, 2); }, true, failures);
   expectAssertion([] { ASSERT_NEQ(1, 2); }, false, failures);
